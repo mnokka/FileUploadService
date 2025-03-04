@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  flask-uploader:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - /media/mika/e821e31d-8af3-4cd0-9fef-a5a11faa8b8e1/VOLUMES/FILEUPLOAD/uploads:/app/uploads
+      - /media/mika/e821e31d-8af3-4cd0-9fef-a5a11faa8b8e1/VOLUMES/FILEUPLOAD/data:/app/data
+    environment:
+      - FLASK_ENV=development
+      - UPLOAD_FOLDER=uploads
+      - DATA_FILE=data/names_and_hashes.json
