@@ -1,8 +1,9 @@
 import os
 import hashlib
 import json
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import logging
+from werkzeug.utils import secure_filename
 #import shutil
 #import gzip
 
@@ -12,6 +13,15 @@ app = Flask(__name__)
 
 UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
 DATA_FILE = os.getenv('DATA_FILE', 'data/names_and_hashes.json')
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+###################################################################################
+# Check filename extesions
+#
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 ###################################################################################
 # Calculate has has over the file, using 8192 chunk size for calculations
@@ -42,8 +52,8 @@ def save_and_compress_file(file, target_folder, name):
     
     compressed_path = original_path + '.gz'
     
-    with open(original_path, 'rb') as src, gzip.open(compressed_path, 'wb') as dst:
-        shutil.copyfileobj(src, dst)
+    #with open(original_path, 'rb') as src, gzip.open(compressed_path, 'wb') as dst:
+    #    shutil.copyfileobj(src, dst)
 
     file_hash = calculate_file_hash(compressed_path)
 
@@ -53,7 +63,12 @@ def save_and_compress_file(file, target_folder, name):
     
     return compressed_path, file_hash
 
-
+###################################################################################
+# Initila web page. Form to send file
+#
+@app.route('/')
+def index():
+    return render_template('upload_form.html')
 
 ###################################################################################
 # Upload image and name
@@ -68,14 +83,19 @@ def upload_file():
 
     if not name or not file:
         return jsonify({'error': 'Name and file required'}), 400
+    
+    if not allowed_file(file.filename):
+        logging.error(f"ERROR: Not allowed filetype: {file}")
+        return jsonify({'error': 'Invalid file type'}), 400
 
     logging.info(f"Received data, name:{name} ,file:{file}")
 
-    if not hasattr(file, 'read'):
-        logging.error(f"ERROR: File is not a valid FileStorage object: {file}")
-        return jsonify({'error': 'Invalid file format'}), 400
+    #if not hasattr(file, 'read'):
+    #    logging.error(f"ERROR: File is not a valid FileStorage object: {file}")
+    #    return jsonify({'error': 'Invalid file format'}), 400
 
-    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+    filename = secure_filename(file.filename) #filtering
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
     try:
         file.save(filepath)
         logging.info(f"File saved to {filepath}")

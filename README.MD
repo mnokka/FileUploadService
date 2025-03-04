@@ -15,6 +15,10 @@ Pic name can be queried using hash
 
 docker-compose up --build
 
+### Add image web page usage
+
+*http://localhost:5000/*
+
 
 ### Add image
 
